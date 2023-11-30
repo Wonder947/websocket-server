@@ -1,45 +1,20 @@
-import { Server } from "socket.io";
-import { createServer } from "http";
-import express from 'express'
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+const app = express();
+const server = createServer(app);
+const io = new Server(server);
+import url from 'url';
+import path from 'path';
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, 'public')));
 
-const app = express()
-const httpServer = createServer(app)
-const io = new Server(httpServer, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST']
-    }
-});
+const PORT = process.env.PORT || 3001
+server.listen(PORT);
 
-io.on("connection", (socket) => {
-  console.log("a client has connected:", socket.id)
 
-  socket.on("greeting", (data)=>{
-    console.log("greeting data: ", data)
-  })
-});
+io.on('connection', (socket)=>{
+    console.log("a client has connected:", socket.id)
 
-httpServer.listen(3001, ()=>{
-    console.log('server is listening on the port 3001')
 })
 
-// export const webSocketServer = {
-//     io: wssIo()
-// }
-
-// function wssIo(){
-//     console.log("???? is this running")
-
-//     const httpServer = createServer()
-//     const io = new Server(httpServer, {});
-
-//     io.on("connection", (socket) => {
-//     console.log("a client has connected:", socket.id)
-
-//     socket.on("greeting", (data)=>{
-//         console.log("greeting data: ", data)
-//     })
-//     });
-
-//     httpServer.listen(3001)
-// }
