@@ -5,10 +5,11 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 const app = express();
 const server = createServer(app);
-console.log(process.env.CORS_ALLOWED_ORIGIN)
+const allowed_origins = process.env.CORS_ALLOWED_ORIGIN.split('&')
+// console.log(allowed_origins)
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CORS_ALLOWED_ORIGIN, 'http://localhost:3000']
+    origin: allowed_origins
   }
 });
 import url from 'url';
