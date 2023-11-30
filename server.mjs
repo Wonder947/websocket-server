@@ -10,7 +10,9 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3001
-server.listen(PORT);
+server.listen(PORT, ()=>{
+  console.log(`Server running on port ${PORT}`)
+});
 
 
 io.on('connection', (socket)=>{
