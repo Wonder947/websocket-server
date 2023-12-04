@@ -24,11 +24,26 @@ server.listen(PORT, ()=>{
 
 
 io.on('connection', (socket)=>{
-    console.log("a client has connected:", socket.id)
+  console.log("a client has connected:", socket.id)
 
   socket.on('greeting', (data)=>{console.log(data)})
 
   socket.on('test2', ()=>socket.emit('test2'))
+
+  socket.on('join', (room)=>{
+    socket.join(room)
+    console.log(socket.id, 'has joined room', room)
+  })
+
+  socket.on('updateRoomList', ()=>{
+    console.log(socket.id, 'request update room list')
+    io.to('hall').emit('updateRoomList')
+  })
+
+  socket.on('requestUpdateRoomInfo', (roomId)=>{
+    console.log(socket.id, 'request update roominfo of', roomId)
+    io.to(roomId).emit('updateRoomInfo')
+  })
 
     setInterval(() => {
       socket.emit('test')
