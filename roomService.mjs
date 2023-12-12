@@ -1,7 +1,8 @@
 import { db } from "./db.mjs";
 
 export {
-    userJoinRoom
+    userJoinRoom,
+    userQuitRoom
 }
 
 // this function helps a user enter room, given userId and roomId
@@ -19,9 +20,21 @@ const userJoinRoom = async (uid, rid)=>{
         // add it to the room and return the new memberNames
         roomDoc.memberNames.push(userName)
         const result = await roomDoc.save()
-        console.log("new user:", userName, "entered room:", rid, 'result:', result)
+        console.log("new user:", userName, "entered room:", roomDoc.name)
         return roomDoc.memberNames
     }
     return null
+}
+
+// given userId and roomId, quit the room for the user on db
+const userQuitRoom = async (uid, rid)=>{
+    console.log("user:", uid, "quit room:", rid)
+    const userDoc = await db.User.findById(uid)
+    const userName = userDoc.username
+    const roomDoc = await db.Room.findById(rid)
+    const newMemberNames = roomDoc.memberNames.filter((name)=>name!=userName)
+    roomDoc.memberNames = newMemberNames
+    const result = await roomDoc.save()
+    return newMemberNames
 }
 

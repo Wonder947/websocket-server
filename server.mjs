@@ -15,7 +15,7 @@ const io = new Server(server, {
 });
 import url from 'url';
 import path from 'path';
-import { userJoinRoom } from './roomService.mjs';
+import { userJoinRoom, userQuitRoom } from './roomService.mjs';
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -31,16 +31,17 @@ io.use((socket, next)=>{
   if (uid){
     socket.uid = uid
   }
+  const rid = socket.handshake.auth.rid
+  if (rid){
+    socket.rid = rid
+  }
   next()
 })
 
 io.on('connection', (socket)=>{
   console.log("a client has connected:", socket.id)
 
-  // console.log("???TEST", db.Room.find().then(d=>d.toString()).then(d=>console.log(d))) //test success
-  // console.log("???UID", socket.uid)  //test success
-
-  socket.on('greeting', (data)=>{console.log(data)})
+  // socket.on('greeting', (data)=>{console.log(data)})
 
   socket.on('test2', ()=>socket.emit('test2'))
 
@@ -51,14 +52,13 @@ io.on('connection', (socket)=>{
 
   socket.on('joinRoom', async (roomId)=>{
     socket.join(roomId)
-    console.log(socket.id, 'has joined room', roomId)
-    // check and reflect new user join in db
     const userId = socket.uid
+    socket.join(userId)
+    // check and reflect new user join
     const newMemberNames = await userJoinRoom(userId, roomId)
-    // console.log("???need update?", needUpdate)  //test success
     if (newMemberNames){
-      io.to('roomId').emit('updateRoomMemberNames', newMemberNames)
-      console.log("updating member names", newMemberNames)
+      io.to(roomId).emit('updateRoomMemberNames', newMemberNames)
+      console.log("updating member names after some user entered", newMemberNames)
     }
   })
 
@@ -70,6 +70,25 @@ io.on('connection', (socket)=>{
   socket.on('requestUpdateRoomInfo', (roomId)=>{
     console.log(socket.id, 'request update roominfo of', roomId)
     io.to(roomId).emit('updateRoomInfo')
+  })
+
+  socket.on('disconnect', async ()=>{
+    console.log("user", socket.id, "has disconnected")
+
+    if (socket.uid){
+      // check number of user sockets inside the room uid
+      // if the numebr of user sockets in that specific room is 0, quit the user from that room
+      const matchingUidSockets = await io.in(socket.uid).fetchSockets()
+      const numberUidSocksInRoomRid = matchingUidSockets.filter(soc=>soc.rid===socket.rid).length
+      // console.log("left number of user sockets inside the room", numberUidSocksInRoomRid)
+      const isDisconnected = numberUidSocksInRoomRid === 0
+      if (isDisconnected){
+        const newMemberNames = await userQuitRoom(socket.uid, socket.rid)
+        io.to(socket.rid).emit('updateRoomMemberNames', newMemberNames)
+        console.log("updating member names after some user quiting", newMemberNames)
+      }
+    }
+
   })
 
     setInterval(() => {
